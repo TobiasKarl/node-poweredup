@@ -89,6 +89,20 @@ export class BaseHub extends EventEmitter {
         return this._bleDevice.connected;
     }
 
+    get connecting() {
+        return this._bleDevice.connecting;
+    }
+   get connected() {
+        return this._bleDevice.connected;
+    }
+   get connectable() {
+        return this._bleDevice._noblePeripheral.connectable;
+    }
+   get state () {
+        return this._bleDevice._noblePeripheral.state;
+    }
+
+
 
     /**
      * @readonly
