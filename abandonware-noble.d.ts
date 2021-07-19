@@ -11,7 +11,7 @@ declare module "@abandonware/noble" {
 
     /// <reference types="node" />
 
-    import events = require("events");
+    import  = require("events");
 
     export function startScanning(callback?: (error?: Error) => void): void;
     export function startScanning(serviceUUIDs: string[], callback?: (error?: Error) => void): void;
