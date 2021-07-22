@@ -1,47 +1,23 @@
 "use strict";
-var __createBinding =
-    (this && this.__createBinding) ||
-    (Object.create
-        ? function (o, m, k, k2) {
-              if (k2 === undefined) k2 = k;
-              Object.defineProperty(o, k2, {
-                  enumerable: true,
-                  get: function () {
-                      return m[k];
-                  },
-              });
-          }
-        : function (o, m, k, k2) {
-              if (k2 === undefined) k2 = k;
-              o[k2] = m[k];
-          });
-var __setModuleDefault =
-    (this && this.__setModuleDefault) ||
-    (Object.create
-        ? function (o, v) {
-              Object.defineProperty(o, "default", {
-                  enumerable: true,
-                  value: v,
-              });
-          }
-        : function (o, v) {
-              o["default"] = v;
-          });
-var __importStar =
-    (this && this.__importStar) ||
-    function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null)
-            for (var k in mod)
-                if (
-                    k !== "default" &&
-                    Object.prototype.hasOwnProperty.call(mod, k)
-                )
-                    __createBinding(result, mod, k);
-        __setModuleDefault(result, mod);
-        return result;
-    };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BaseHub = void 0;
 const events_1 = require("events");
@@ -116,8 +92,7 @@ class BaseHub extends events_1.EventEmitter {
     get name() {
         return this._bleDevice.name;
     }
-
-    get connecting() {
+  get connecting() {
         return this._bleDevice.connecting;
     }
     get connected() {
@@ -128,6 +103,9 @@ class BaseHub extends events_1.EventEmitter {
     }
     get state() {
         return this._bleDevice._noblePeripheral.state;
+    }
+    set connectable(bol) {
+        this._bleDevice._noblePeripheral.connectable = bol;
     }
     /**
      * @readonly
@@ -193,8 +171,11 @@ class BaseHub extends events_1.EventEmitter {
     connect() {
         if (this._bleDevice.connecting) {
             throw new Error("Already connecting");
-        } else if (this._bleDevice.connected) {
+        }
+        else if (this._bleDevice.connected) {
             throw new Error("Already connected");
+        }else if (!this._bleDevice._noblePeripheral.connectable) {
+            throw new Error("Not connectable");
         }
         return this._bleDevice.connect();
     }
@@ -216,7 +197,8 @@ class BaseHub extends events_1.EventEmitter {
         const portId = this._portMap[portName];
         if (portId !== undefined) {
             return this._attachedDevices[portId];
-        } else {
+        }
+        else {
             return undefined;
         }
     }
@@ -238,7 +220,8 @@ class BaseHub extends events_1.EventEmitter {
                 if (device.portName === portName) {
                     resolve(device);
                     return true;
-                } else {
+                }
+                else {
                     return false;
                 }
             });
@@ -279,7 +262,8 @@ class BaseHub extends events_1.EventEmitter {
                 if (device.type === deviceType) {
                     resolve(device);
                     return true;
-                } else {
+                }
+                else {
                     return false;
                 }
             });
@@ -294,7 +278,7 @@ class BaseHub extends events_1.EventEmitter {
         return;
     }
     isPortVirtual(portId) {
-        return this._virtualPorts.indexOf(portId) > -1;
+        return (this._virtualPorts.indexOf(portId) > -1);
     }
     /**
      * Sleep a given amount of time.
@@ -331,30 +315,23 @@ class BaseHub extends events_1.EventEmitter {
     }
     manuallyAttachDevice(deviceType, portId) {
         if (!this._attachedDevices[portId]) {
-            debug(
-                `No device attached to portId ${portId}, creating and attaching device type ${deviceType}`
-            );
+            debug(`No device attached to portId ${portId}, creating and attaching device type ${deviceType}`);
             const device = this._createDevice(deviceType, portId);
             this._attachDevice(device);
             return device;
-        } else {
+        }
+        else {
             if (this._attachedDevices[portId].type === deviceType) {
-                debug(
-                    `Device of ${deviceType} already attached to portId ${portId}, returning existing device`
-                );
+                debug(`Device of ${deviceType} already attached to portId ${portId}, returning existing device`);
                 return this._attachedDevices[portId];
-            } else {
-                throw new Error(
-                    `Already a different type of device attached to portId ${portId}. Only use this method when you are certain what's attached.`
-                );
+            }
+            else {
+                throw new Error(`Already a different type of device attached to portId ${portId}. Only use this method when you are certain what's attached.`);
             }
         }
     }
     _attachDevice(device) {
-        if (
-            this._attachedDevices[device.portId] &&
-            this._attachedDevices[device.portId].type === device.type
-        ) {
+        if (this._attachedDevices[device.portId] && this._attachedDevices[device.portId].type === device.type) {
             return;
         }
         this._attachedDevices[device.portId] = device;
@@ -364,11 +341,7 @@ class BaseHub extends events_1.EventEmitter {
          * @param {Device} device
          */
         this.emit("attach", device);
-        debug(
-            `Attached device type ${device.type} (${
-                Consts.DeviceTypeNames[device.type]
-            }) on port ${device.portName} (${device.portId})`
-        );
+        debug(`Attached device type ${device.type} (${Consts.DeviceTypeNames[device.type]}) on port ${device.portName} (${device.portId})`);
         let i = this._attachCallbacks.length;
         while (i--) {
             const callback = this._attachCallbacks[i];
@@ -385,11 +358,7 @@ class BaseHub extends events_1.EventEmitter {
          * @param {Device} device
          */
         this.emit("detach", device);
-        debug(
-            `Detached device type ${device.type} (${
-                Consts.DeviceTypeNames[device.type]
-            }) on port ${device.portName} (${device.portId})`
-        );
+        debug(`Detached device type ${device.type} (${Consts.DeviceTypeNames[device.type]}) on port ${device.portName} (${device.portId})`);
     }
     _createDevice(deviceType, portId) {
         let constructor;
@@ -397,67 +366,43 @@ class BaseHub extends events_1.EventEmitter {
         const deviceConstructors = {
             [Consts.DeviceType.LIGHT]: light_1.Light,
             [Consts.DeviceType.TRAIN_MOTOR]: trainmotor_1.TrainMotor,
-            [Consts.DeviceType.SIMPLE_MEDIUM_LINEAR_MOTOR]:
-                simplemediumlinearmotor_1.SimpleMediumLinearMotor,
-            [Consts.DeviceType.MOVE_HUB_MEDIUM_LINEAR_MOTOR]:
-                movehubmediumlinearmotor_1.MoveHubMediumLinearMotor,
+            [Consts.DeviceType.SIMPLE_MEDIUM_LINEAR_MOTOR]: simplemediumlinearmotor_1.SimpleMediumLinearMotor,
+            [Consts.DeviceType.MOVE_HUB_MEDIUM_LINEAR_MOTOR]: movehubmediumlinearmotor_1.MoveHubMediumLinearMotor,
             [Consts.DeviceType.MOTION_SENSOR]: motionsensor_1.MotionSensor,
             [Consts.DeviceType.TILT_SENSOR]: tiltsensor_1.TiltSensor,
-            [Consts.DeviceType.MOVE_HUB_TILT_SENSOR]:
-                movehubtiltsensor_1.MoveHubTiltSensor,
+            [Consts.DeviceType.MOVE_HUB_TILT_SENSOR]: movehubtiltsensor_1.MoveHubTiltSensor,
             [Consts.DeviceType.PIEZO_BUZZER]: piezobuzzer_1.PiezoBuzzer,
-            [Consts.DeviceType.TECHNIC_COLOR_SENSOR]:
-                techniccolorsensor_1.TechnicColorSensor,
-            [Consts.DeviceType.TECHNIC_DISTANCE_SENSOR]:
-                technicdistancesensor_1.TechnicDistanceSensor,
-            [Consts.DeviceType.TECHNIC_FORCE_SENSOR]:
-                technicforcesensor_1.TechnicForceSensor,
-            [Consts.DeviceType.TECHNIC_MEDIUM_HUB_TILT_SENSOR]:
-                technicmediumhubtiltsensor_1.TechnicMediumHubTiltSensor,
-            [Consts.DeviceType.TECHNIC_MEDIUM_HUB_GYRO_SENSOR]:
-                technicmediumhubgyrosensor_1.TechnicMediumHubGyroSensor,
-            [Consts.DeviceType.TECHNIC_MEDIUM_HUB_ACCELEROMETER]:
-                technicmediumhubaccelerometersensor_1.TechnicMediumHubAccelerometerSensor,
-            [Consts.DeviceType.MEDIUM_LINEAR_MOTOR]:
-                mediumlinearmotor_1.MediumLinearMotor,
-            [Consts.DeviceType.TECHNIC_MEDIUM_ANGULAR_MOTOR]:
-                technicmediumangularmotor_1.TechnicMediumAngularMotor,
-            [Consts.DeviceType.TECHNIC_LARGE_ANGULAR_MOTOR]:
-                techniclargeangularmotor_1.TechnicLargeAngularMotor,
-            [Consts.DeviceType.TECHNIC_LARGE_LINEAR_MOTOR]:
-                techniclargelinearmotor_1.TechnicLargeLinearMotor,
-            [Consts.DeviceType.TECHNIC_XLARGE_LINEAR_MOTOR]:
-                technicxlargelinearmotor_1.TechnicXLargeLinearMotor,
-            [Consts.DeviceType.COLOR_DISTANCE_SENSOR]:
-                colordistancesensor_1.ColorDistanceSensor,
+            [Consts.DeviceType.TECHNIC_COLOR_SENSOR]: techniccolorsensor_1.TechnicColorSensor,
+            [Consts.DeviceType.TECHNIC_DISTANCE_SENSOR]: technicdistancesensor_1.TechnicDistanceSensor,
+            [Consts.DeviceType.TECHNIC_FORCE_SENSOR]: technicforcesensor_1.TechnicForceSensor,
+            [Consts.DeviceType.TECHNIC_MEDIUM_HUB_TILT_SENSOR]: technicmediumhubtiltsensor_1.TechnicMediumHubTiltSensor,
+            [Consts.DeviceType.TECHNIC_MEDIUM_HUB_GYRO_SENSOR]: technicmediumhubgyrosensor_1.TechnicMediumHubGyroSensor,
+            [Consts.DeviceType.TECHNIC_MEDIUM_HUB_ACCELEROMETER]: technicmediumhubaccelerometersensor_1.TechnicMediumHubAccelerometerSensor,
+            [Consts.DeviceType.MEDIUM_LINEAR_MOTOR]: mediumlinearmotor_1.MediumLinearMotor,
+            [Consts.DeviceType.TECHNIC_MEDIUM_ANGULAR_MOTOR]: technicmediumangularmotor_1.TechnicMediumAngularMotor,
+            [Consts.DeviceType.TECHNIC_LARGE_ANGULAR_MOTOR]: techniclargeangularmotor_1.TechnicLargeAngularMotor,
+            [Consts.DeviceType.TECHNIC_LARGE_LINEAR_MOTOR]: techniclargelinearmotor_1.TechnicLargeLinearMotor,
+            [Consts.DeviceType.TECHNIC_XLARGE_LINEAR_MOTOR]: technicxlargelinearmotor_1.TechnicXLargeLinearMotor,
+            [Consts.DeviceType.COLOR_DISTANCE_SENSOR]: colordistancesensor_1.ColorDistanceSensor,
             [Consts.DeviceType.VOLTAGE_SENSOR]: voltagesensor_1.VoltageSensor,
             [Consts.DeviceType.CURRENT_SENSOR]: currentsensor_1.CurrentSensor,
-            [Consts.DeviceType.REMOTE_CONTROL_BUTTON]:
-                remotecontrolbutton_1.RemoteControlButton,
+            [Consts.DeviceType.REMOTE_CONTROL_BUTTON]: remotecontrolbutton_1.RemoteControlButton,
             [Consts.DeviceType.HUB_LED]: hubled_1.HubLED,
-            [Consts.DeviceType.DUPLO_TRAIN_BASE_COLOR_SENSOR]:
-                duplotrainbasecolorsensor_1.DuploTrainBaseColorSensor,
-            [Consts.DeviceType.DUPLO_TRAIN_BASE_MOTOR]:
-                duplotrainbasemotor_1.DuploTrainBaseMotor,
-            [Consts.DeviceType.DUPLO_TRAIN_BASE_SPEAKER]:
-                duplotrainbasespeaker_1.DuploTrainBaseSpeaker,
-            [Consts.DeviceType.DUPLO_TRAIN_BASE_SPEEDOMETER]:
-                duplotrainbasespeedometer_1.DuploTrainBaseSpeedometer,
-            [Consts.DeviceType.MARIO_ACCELEROMETER]:
-                marioaccelerometer_1.MarioAccelerometer,
-            [Consts.DeviceType.MARIO_BARCODE_SENSOR]:
-                mariobarcodesensor_1.MarioBarcodeSensor,
-            [Consts.DeviceType.MARIO_PANTS_SENSOR]:
-                mariopantssensor_1.MarioPantsSensor,
-            [Consts.DeviceType.TECHNIC_MEDIUM_ANGULAR_MOTOR_GREY]:
-                technicmediumangularmotor_1.TechnicMediumAngularMotor,
-            [Consts.DeviceType.TECHNIC_LARGE_ANGULAR_MOTOR_GREY]:
-                techniclargeangularmotor_1.TechnicLargeAngularMotor,
+            [Consts.DeviceType.DUPLO_TRAIN_BASE_COLOR_SENSOR]: duplotrainbasecolorsensor_1.DuploTrainBaseColorSensor,
+            [Consts.DeviceType.DUPLO_TRAIN_BASE_MOTOR]: duplotrainbasemotor_1.DuploTrainBaseMotor,
+            [Consts.DeviceType.DUPLO_TRAIN_BASE_SPEAKER]: duplotrainbasespeaker_1.DuploTrainBaseSpeaker,
+            [Consts.DeviceType.DUPLO_TRAIN_BASE_SPEEDOMETER]: duplotrainbasespeedometer_1.DuploTrainBaseSpeedometer,
+            [Consts.DeviceType.MARIO_ACCELEROMETER]: marioaccelerometer_1.MarioAccelerometer,
+            [Consts.DeviceType.MARIO_BARCODE_SENSOR]: mariobarcodesensor_1.MarioBarcodeSensor,
+            [Consts.DeviceType.MARIO_PANTS_SENSOR]: mariopantssensor_1.MarioPantsSensor,
+            [Consts.DeviceType.TECHNIC_MEDIUM_ANGULAR_MOTOR_GREY]: technicmediumangularmotor_1.TechnicMediumAngularMotor,
+            [Consts.DeviceType.TECHNIC_LARGE_ANGULAR_MOTOR_GREY]: techniclargeangularmotor_1.TechnicLargeAngularMotor,
         };
         constructor = deviceConstructors[deviceType];
         if (constructor) {
             return new constructor(this, portId, undefined, deviceType);
-        } else {
+        }
+        else {
             return new device_1.Device(this, portId, undefined, deviceType);
         }
     }

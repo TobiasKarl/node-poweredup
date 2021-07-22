@@ -25,7 +25,7 @@ class NobleDevice extends events_1.EventEmitter {
         setTimeout(() => {
             this._name = device.advertisement.localName;
             this.emit("discoverComplete");
-        }, 1000);
+        }, 10);
     }
     get uuid() {
         return this._uuid;
@@ -42,26 +42,12 @@ class NobleDevice extends events_1.EventEmitter {
     connect() {
         return new Promise((resolve, reject) => {
             this._connecting = true;
-
-            /*             var myTo = setTimeout(function () {
-                console.log("HEEEY");
-                if (this._connected == false) {
-                    //hub.disconnect();
-                    return reject();
-                }
-
-                //if ((hub.connected || hub.connecting) && hub.sta == false) {
-            }, 500); */
             this._noblePeripheral.connect((err) => {
                 if (err) {
-                    this._connecting = false;
-                    console.log("fuc");
                     return reject(err);
                 }
                 this._connecting = false;
                 this._connected = true;
-                /*                 clearTimeout(myTo);
-                 */
                 return resolve();
             });
         });
@@ -82,23 +68,14 @@ class NobleDevice extends events_1.EventEmitter {
                 debug("Service/characteristic discovery started");
                 const servicePromises = [];
                 services.forEach((service) => {
-                    servicePromises.push(
-                        new Promise((resolve) => {
-                            service.discoverCharacteristics(
-                                [],
-                                (err, characteristics) => {
-                                    characteristics.forEach(
-                                        (characteristic) => {
-                                            this._characteristics[
-                                                characteristic.uuid
-                                            ] = characteristic;
-                                        }
-                                    );
-                                    return resolve();
-                                }
-                            );
-                        })
-                    );
+                    servicePromises.push(new Promise((resolve) => {
+                        service.discoverCharacteristics([], (err, characteristics) => {
+                            characteristics.forEach((characteristic) => {
+                                this._characteristics[characteristic.uuid] = characteristic;
+                            });
+                            return resolve();
+                        });
+                    }));
                 });
                 Promise.all(servicePromises).then(() => {
                     debug("Service/characteristic discovery finished");

@@ -13,7 +13,6 @@ const events_1 = require("events");
 const Debug = require("debug");
 const debug = Debug("poweredup");
 const noble = require("@abandonware/noble");
-
 let ready = false;
 let wantScan = false;
 let discoveryEventAttached = false;
@@ -21,18 +20,19 @@ const startScanning = () => {
     noble.startScanning();
 };
 noble.on("stateChange", (state) => {
-    ready = state === "poweredOn";
+    ready = (state === "poweredOn");
     if (ready) {
         if (wantScan) {
             debug("Scanning started");
             startScanning();
         }
-        noble.on("scanStop", () => {
-            setTimeout(() => {
-                startScanning();
-            }, 1000);
-        });
-    } else {
+       // noble.on('scanStop', () => {
+         //   setTimeout(() => {
+           //     startScanning();
+           // }, 1000);
+        //});
+    }
+    else {
         noble.stopScanning();
     }
 });
@@ -74,6 +74,21 @@ class PoweredUP extends events_1.EventEmitter {
         }
         noble.stopScanning();
     }
+removeListener() {
+        if (discoveryEventAttached) {
+            noble.removeListener("discover", this._discoveryEventHandler);
+            discoveryEventAttached = false;
+        }
+    }
+    stopScan() {
+        wantScan = false;
+        noble.stopScanning();
+    }
+    startScan() {
+        wantScan = true;
+        noble.startScanning();
+    }
+
     /**
      * Retrieve a list of Powered UP Hubs.
      * @method PoweredUP#getHubs
@@ -98,9 +113,7 @@ class PoweredUP extends events_1.EventEmitter {
      * @returns {BaseHub}
      */
     getHubByPrimaryMACAddress(address) {
-        return Object.values(this._connectedHubs).filter(
-            (hub) => hub.primaryMACAddress === address
-        )[0];
+        return Object.values(this._connectedHubs).filter((hub) => hub.primaryMACAddress === address)[0];
     }
     /**
      * Retrieve a list of Powered UP Hub by name.
@@ -109,9 +122,7 @@ class PoweredUP extends events_1.EventEmitter {
      * @returns {BaseHub[]}
      */
     getHubsByName(name) {
-        return Object.values(this._connectedHubs).filter(
-            (hub) => hub.name === name
-        );
+        return Object.values(this._connectedHubs).filter((hub) => hub.name === name);
     }
     /**
      * Retrieve a list of Powered UP Hub by type.
@@ -120,47 +131,40 @@ class PoweredUP extends events_1.EventEmitter {
      * @returns {BaseHub[]}
      */
     getHubsByType(hubType) {
-        return Object.values(this._connectedHubs).filter(
-            (hub) => hub.type === hubType
-        );
+        return Object.values(this._connectedHubs).filter((hub) => hub.type === hubType);
     }
     async _discoveryEventHandler(peripheral) {
-        //if (this._connectedHubs[hub.uuid] == null) {
         peripheral.removeAllListeners();
         const device = new nobleabstraction_1.NobleDevice(peripheral);
         let hub;
         if (wedo2smarthub_1.WeDo2SmartHub.IsWeDo2SmartHub(peripheral)) {
             hub = new wedo2smarthub_1.WeDo2SmartHub(device);
-        } else if (movehub_1.MoveHub.IsMoveHub(peripheral)) {
+        }
+        else if (movehub_1.MoveHub.IsMoveHub(peripheral)) {
             hub = new movehub_1.MoveHub(device);
-        } else if (hub_1.Hub.IsHub(peripheral)) {
+        }
+        else if (hub_1.Hub.IsHub(peripheral)) {
             hub = new hub_1.Hub(device);
-        } else if (remotecontrol_1.RemoteControl.IsRemoteControl(peripheral)) {
+        }
+        else if (remotecontrol_1.RemoteControl.IsRemoteControl(peripheral)) {
             hub = new remotecontrol_1.RemoteControl(device);
-        } else if (
-            duplotrainbase_1.DuploTrainBase.IsDuploTrainBase(peripheral)
-        ) {
+        }
+        else if (duplotrainbase_1.DuploTrainBase.IsDuploTrainBase(peripheral)) {
             hub = new duplotrainbase_1.DuploTrainBase(device);
-        } else if (
-            technicmediumhub_1.TechnicMediumHub.IsTechnicMediumHub(peripheral)
-        ) {
+        }
+        else if (technicmediumhub_1.TechnicMediumHub.IsTechnicMediumHub(peripheral)) {
             hub = new technicmediumhub_1.TechnicMediumHub(device);
-            console.log("got a new hub");
-        } else if (mario_1.Mario.IsMario(peripheral)) {
+        }
+        else if (mario_1.Mario.IsMario(peripheral)) {
             hub = new mario_1.Mario(device);
-        } else {
+        }
+        else {
             return;
         }
         device.on("discoverComplete", () => {
             hub.on("connect", () => {
                 debug(`Hub ${hub.uuid} connected`);
-                console.log("in here");
-                console.log("in here");
-
-                console.log(Object.keys(this._connectedHubs).length);
-                if (this._connectedHubs[hub.uuid] == null) {
-                    this._connectedHubs[hub.uuid] = hub;
-                }
+                this._connectedHubs[hub.uuid] = hub;
             });
             hub.on("disconnect", () => {
                 debug(`Hub ${hub.uuid} disconnected`);
@@ -177,7 +181,6 @@ class PoweredUP extends events_1.EventEmitter {
              */
             this.emit("discover", hub);
         });
-        //}
     }
 }
 exports.PoweredUP = PoweredUP;
